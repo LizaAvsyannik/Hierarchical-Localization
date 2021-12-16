@@ -25,7 +25,7 @@ confs = {
         'output': 'matches-superglue',
         'model': {
             'name': 'superglue',
-            'weights': 'outdoor',
+            'weights': 'indoor',
             'sinkhorn_iterations': 50,
         },
     },
