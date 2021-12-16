@@ -5,7 +5,7 @@ import pickle
 
 from .utils.read_write_model import read_images_binary, read_points3D_binary
 from .utils.viz import (
-        plot_images, plot_keypoints, plot_matches, cm_RdGn, add_text)
+        plot_images, plot_keypoints, plot_matches, cm_RdGn, add_text, save_plot)
 from .utils.io import read_image
 
 
@@ -134,3 +134,47 @@ def visualize_loc(results, image_dir, sfm_model=None, top_k_db=2,
             add_text(0, q, pos=(0.01, 0.01), fs=5, lcolor=None, va='bottom')
             add_text(1, db_name, pos=(0.01, 0.01), fs=5,
                      lcolor=None, va='bottom')
+            
+            
+def visualize_match(results, image_dir, sfm_model=None,
+                  selected=[], n=1, seed=0, prefix=None, dpi=75, output_path='', dataset_name=''):
+    assert image_dir.exists()
+    
+    """ Function to visualize feature matching without running localization"""
+
+    with open(str(results)+'_logs.pkl', 'rb') as f:
+        logs = pickle.load(f)
+
+    if not selected:
+        queries = list(logs['loc'].keys())
+        if prefix:
+            queries = [q for q in queries if q.startswith(prefix)]
+        selected = random.Random(seed).sample(queries, n)
+        
+
+    is_sfm = sfm_model is not None
+    if is_sfm:
+        assert sfm_model.exists()
+        images = read_images_binary(sfm_model / 'images.bin')
+
+    for q in selected:
+        q_image = read_image(image_dir / q)
+        loc = logs['loc'][q]
+        mkp_q = loc['keypoints_query']
+        n = len(loc['db'])
+        
+        assert 'keypoints_db' in loc
+        assert 'indices_db' in loc
+    
+        for db_idx in range(n):
+            db_name = loc['db'][db_idx]
+            kp_q = mkp_q[loc['indices_db'] == db_idx]
+            kp_db = loc['keypoints_db'][loc['indices_db'] == db_idx]
+          
+
+            db_image = read_image(image_dir / db_name)
+
+            plot_images([q_image, db_image], dpi=dpi)
+            plot_matches(kp_q, kp_db, color=None, a=0.1)
+            save_plot(output_path / f'{dataset_name}_{db_idx}')
+            
