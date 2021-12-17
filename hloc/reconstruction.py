@@ -6,7 +6,7 @@ import multiprocessing
 import subprocess
 import pprint
 
-from .utils.read_write_model import read_cameras_binary
+from .utils.read_write_model import read_cameras_binary, read_images_binary
 from .utils.database import COLMAPDatabase
 from .triangulation import (
     import_features, import_matches, geometric_verification, run_command)
@@ -37,13 +37,16 @@ def import_images(colmap_path, sfm_dir, image_dir, database_path,
         with open(str(dummy_dir / (i.name + '.txt')), 'w') as f:
             f.write('0 128')
 
+    camera_model
     cmd = [
         str(colmap_path), 'feature_importer',
         '--database_path', str(database_path),
         '--image_path', str(image_dir),
         '--import_path', str(dummy_dir),
         '--ImageReader.single_camera',
-        str(int(single_camera))]
+        str(int(single_camera)),
+        #as we are
+        '--ImageReader.camera_model', 'SIMPLE_PINHOLE']
     run_command(cmd, verbose)
 
     db = COLMAPDatabase.connect(database_path)
@@ -87,7 +90,10 @@ def run_reconstruction(colmap_path, sfm_dir, database_path, image_dir,
     largest_model = None
     largest_model_num_images = 0
     for model in models:
-        num_images = len(read_cameras_binary(str(model / 'cameras.bin')))
+        #as for experiment we are using only one camera, it implies to look at the number of images, not cameras
+        num_images = len(read_images_binary(str(model / 'images.bin')))
+        logging.info(f'model is #{model.name} '
+                     f'with {num_images} images.')
         if num_images > largest_model_num_images:
             largest_model = model
             largest_model_num_images = num_images

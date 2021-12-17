@@ -124,7 +124,8 @@ def visualize_loc(results, image_dir, sfm_model=None, top_k_db=2,
                 kp_db = loc['keypoints_db'][loc['indices_db'] == db_idx]
                 inliers_db = inliers[loc['indices_db'] == db_idx]
 
-            db_image = read_image(image_dir / db_name)
+            #fix for database/
+            db_image = read_image(image_dir / 'database' /db_name)
             color = cm_RdGn(inliers_db).tolist()
             text = f'inliers: {sum(inliers_db)}/{len(inliers_db)}'
 

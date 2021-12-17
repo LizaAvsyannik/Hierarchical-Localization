@@ -58,7 +58,7 @@ def pose_from_cluster(qname, qinfo, db_ids, db_images, points3D,
             logging.debug(f'No 3D points found for {db_name}.')
             continue
 
-        pair = names_to_pair(qname, db_name)
+        pair = names_to_pair(qname, f'database/{db_name}')
         matches = match_file[pair]['matches0'].__array__()
         valid = np.where(matches > -1)[0]
         valid = valid[points3D_ids[matches[valid]] != -1]
@@ -96,21 +96,28 @@ def pose_from_cluster(qname, qinfo, db_ids, db_images, points3D,
     return ret, mkpq, mp3d, mp3d_ids, num_matches, (mkp_idxs, mkp_to_3D_to_db)
 
 
-def main(reference_sfm, queries, retrieval, features, matches, results,
-         ransac_thresh=12, covisibility_clustering=False,
+def main(reference_sfm, queries, retrieval, features, matches, camera_model, results,
+         ransac_thresh=20, covisibility_clustering=False,
          prepend_camera_name=False):
 
+    # fix (temporal?) for qinfo as camera model
+    qinfo = camera_model
     assert reference_sfm.exists(), reference_sfm
     assert retrieval.exists(), retrieval
     assert features.exists(), features
     assert matches.exists(), matches
 
-    queries = parse_image_lists(queries, with_intrinsics=True)
+    queries = parse_image_lists(queries, with_intrinsics=False)
     retrieval_dict = parse_retrieval(retrieval)
 
     logging.info('Reading 3D model...')
     _, db_images, points3D = read_model(str(reference_sfm))
-    db_name_to_id = {image.name: i for i, image in db_images.items()}
+    # image full path fix (temporal?)
+    # db_name_to_id = {image.name: i for i, image in db_images.items()}
+
+    db_name_to_id = {f'database/{image.name}': i for i, image in db_images.items()}
+
+
 
     feature_file = h5py.File(features, 'r')
     match_file = h5py.File(matches, 'r')
@@ -123,10 +130,11 @@ def main(reference_sfm, queries, retrieval, features, matches, results,
         'loc': {},
     }
     logging.info('Starting localization...')
-    for qname, qinfo in tqdm(queries):
+    for qname in tqdm(queries):
         if qname not in retrieval_dict:
             logging.warning(f'No images retrieved for query image {qname}. Skipping...')
             continue
+        # fix for database/ path
         db_names = retrieval_dict[qname]
         db_ids = []
         for n in db_names:
@@ -142,9 +150,9 @@ def main(reference_sfm, queries, retrieval, features, matches, results,
             logs_clusters = []
             for i, cluster_ids in enumerate(clusters):
                 ret, mkpq, mp3d, mp3d_ids, num_matches, map_ = (
-                        pose_from_cluster(
-                            qname, qinfo, cluster_ids, db_images, points3D,
-                            feature_file, match_file, thresh=ransac_thresh))
+                    pose_from_cluster(
+                        qname, qinfo, cluster_ids, db_images, points3D,
+                        feature_file, match_file, thresh=ransac_thresh))
                 if ret['success'] and ret['num_inliers'] > best_inliers:
                     best_cluster = i
                     best_inliers = ret['num_inliers']
