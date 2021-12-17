@@ -37,7 +37,6 @@ def import_images(colmap_path, sfm_dir, image_dir, database_path,
         with open(str(dummy_dir / (i.name + '.txt')), 'w') as f:
             f.write('0 128')
 
-    camera_model
     cmd = [
         str(colmap_path), 'feature_importer',
         '--database_path', str(database_path),

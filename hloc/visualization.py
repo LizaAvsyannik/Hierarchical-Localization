@@ -56,7 +56,7 @@ def visualize_sfm_2d(sfm_model, image_dir, color_by='visibility',
 
 
 def visualize_loc(results, image_dir, sfm_model=None, top_k_db=2,
-                  selected=[], n=1, seed=0, prefix=None, dpi=75):
+                  selected=[], n=1, seed=0, prefix=None, dpi=75, output_path=''):
     assert image_dir.exists()
 
     with open(str(results)+'_logs.pkl', 'rb') as f:
@@ -135,6 +135,9 @@ def visualize_loc(results, image_dir, sfm_model=None, top_k_db=2,
             add_text(0, q, pos=(0.01, 0.01), fs=5, lcolor=None, va='bottom')
             add_text(1, db_name, pos=(0.01, 0.01), fs=5,
                      lcolor=None, va='bottom')
+            save_plot(output_path / f'loc_{image_dir.name}_{db_idx}')
+
+
             
             
 def visualize_match(results, image_dir, sfm_model=None,
@@ -177,5 +180,6 @@ def visualize_match(results, image_dir, sfm_model=None,
 
             plot_images([q_image, db_image], dpi=dpi)
             plot_matches(kp_q, kp_db, color=None, a=0.1)
-            save_plot(output_path / f'{dataset_name}_{db_idx}')
+            save_plot(output_path / f'loc_{dataset_name}_{db_idx}')
+
             
